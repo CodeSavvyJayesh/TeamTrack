@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">
+    {{ paginator.count|default:members|length }} member{{ paginator.count|pluralize }}
+    {% if pending_invitations %}
+      &middot; <a href="{% url 'members:invitations' %}">{{ pending_invitations }} pending invitation{{ pending_invitations|pluralize }}</a>
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'members:invitations' %}">Invitations</a>
+  <a class="btn btn-primary btn-sm" href="{% url 'members:invite' %}">Add member</a>
+{% endblock %}
+
+{% block content %}
+{% include "partials/_filters.html" %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Member</th><th>Work type</th><th>Today</th>
+          <th>Tasks</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar">{{ member.initials }}</span>
+                <div>
+                  <a class="fw-medium text-decoration-none" href="{% url 'members:detail' member.pk %}">{{ member.full_name }}</a>
+                  <div class="text-muted small">{{ member.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ member.profile.work_type|default:"-" }}</td>
+            <td>{{ today_minutes|dict_get:member.pk|duration_format }}</td>
+            <td class="text-muted small">{{ member.done_tasks }} done / {{ member.open_tasks }} open</td>
+            <td>
+              {% if member.is_active %}
+                <span class="badge text-bg-success-subtle text-success-emphasis">Active</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'members:detail' member.pk %}">View</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="p-0">
+            {% include "partials/_empty.html" with title="No members yet" hint="Invite someone to get started." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

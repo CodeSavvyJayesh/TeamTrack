@@ -1,0 +1,8 @@
+# Core - everything the application needs to run in development.
+Django>=5.1,<6.0
+python-decouple==3.8
+
+# Production only. Uncomment when deploying with PostgreSQL:
+# psycopg[binary]==3.2.3
+# gunicorn==23.0.0
+# whitenoise==6.8.2

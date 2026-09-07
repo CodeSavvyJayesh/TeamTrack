@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block page_actions %}
+  <a class="btn btn-primary btn-sm" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Details</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><th class="fw-normal text-muted">Name</th><td>{{ user.full_name }}</td></tr>
+            <tr><th class="fw-normal text-muted">Email</th><td>{{ user.email }}</td></tr>
+            <tr><th class="fw-normal text-muted">Role</th><td>{{ user.get_role_display }}</td></tr>
+            <tr><th class="fw-normal text-muted">Work type</th><td>{{ profile.work_type|default:"Not set" }}</td></tr>
+            <tr><th class="fw-normal text-muted">Department</th><td>{{ profile.department|default:"Not set" }}</td></tr>
+            <tr><th class="fw-normal text-muted">Phone</th><td>{{ profile.phone|default:"Not set" }}</td></tr>
+            <tr><th class="fw-normal text-muted">Joined</th><td>{{ profile.joined_on|default:"Not set" }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-white small text-muted">
+        Work type and department are set by your administrator.
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Recent activity</div>
+      <div class="card-body p-0">
+        {% if recent_activity %}
+          <ul class="list-group list-group-flush">
+            {% for entry in recent_activity %}
+              <li class="list-group-item d-flex justify-content-between gap-3">
+                <span>{{ entry.target_repr|default:entry.get_verb_display }}</span>
+                <span class="text-muted small text-nowrap">{{ entry.created_at|date:"j M, H:i" }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          {% include "partials/_empty.html" with title="No activity yet" hint="Actions involving your account will appear here." %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

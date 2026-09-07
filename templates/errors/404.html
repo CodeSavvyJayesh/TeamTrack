@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Not found &middot; TeamTrack{% endblock %}
+{% block page_title %}Not found{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body">
+  <p class="mb-1">That page doesn't exist, or isn't yours to see.</p>
+  <p class="text-muted small mb-3">Check the address, or head back to your dashboard.</p>
+  <a class="btn btn-primary btn-sm" href="{% url 'dashboard:home' %}">Back to my dashboard</a>
+</div></div>
+{% endblock %}

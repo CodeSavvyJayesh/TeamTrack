@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">The 200 most recent entries. Append-only - nothing here can be edited.</p>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-auto">
+    <label class="form-label small text-muted mb-1">Action</label>
+    <select name="verb" class="form-select">
+      <option value="">All actions</option>
+      {% for value, label in verbs %}
+        <option value="{{ value }}" {% if value == selected_verb %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto"><button class="btn btn-primary" type="submit">Filter</button></div>
+  <div class="col-auto"><a class="btn btn-link text-muted" href="{{ request.path }}">Clear</a></div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="text-nowrap text-muted small">{{ entry.created_at|date:"j M Y, H:i" }}</td>
+            <td class="small">{{ entry.actor.full_name|default:"System" }}</td>
+            <td><span class="badge text-bg-light text-dark border">{{ entry.get_verb_display }}</span></td>
+            <td class="small">{{ entry.target_repr }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="p-0">
+            {% include "partials/_empty.html" with title="Nothing logged yet" hint="Administrative actions appear here as they happen." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Access denied &middot; TeamTrack{% endblock %}
+{% block page_title %}Access denied{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body">
+  <p class="mb-1">You don't have permission to open that page.</p>
+  <p class="text-muted small mb-3">
+    If you think you should, ask your administrator - permissions are set per role.
+  </p>
+  <a class="btn btn-primary btn-sm" href="{% url 'dashboard:home' %}">Back to my dashboard</a>
+</div></div>
+{% endblock %}

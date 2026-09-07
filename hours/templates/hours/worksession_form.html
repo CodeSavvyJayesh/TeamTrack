@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row"><div class="col-lg-6">
+  <div class="card"><div class="card-body">
+    <p class="text-muted small mb-4">
+      Enter the start and end time. The total is calculated automatically and
+      cannot be typed in, so it can never disagree with the times above it.
+    </p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/_form.html" %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save record</button>
+        <a class="btn btn-outline-secondary" href="{% url 'hours:list' %}">Cancel</a>
+      </div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

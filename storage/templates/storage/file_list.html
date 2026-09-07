@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block page_actions %}
+  <a class="btn btn-primary btn-sm" href="{% url 'storage:upload' %}">Upload file</a>
+{% endblock %}
+
+{% block content %}
+{% include "partials/_filters.html" %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr><th>File</th>{% if user.is_admin_user %}<th>Uploaded by</th>{% endif %}
+        <th>Size</th><th>Visibility</th><th>Uploaded</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for file in files %}
+          <tr>
+            <td>
+              <div class="fw-medium">{{ file.original_name }}</div>
+              {% if file.description %}<div class="text-muted small">{{ file.description }}</div>{% endif %}
+              {% if file.related_task %}
+                <div class="small"><a class="text-decoration-none" href="{% url 'work:task_detail' file.related_task.pk %}">{{ file.related_task.title }}</a></div>
+              {% endif %}
+            </td>
+            {% if user.is_admin_user %}<td class="small">{{ file.uploaded_by.full_name }}</td>{% endif %}
+            <td class="small text-muted">{{ file.size_display }}</td>
+            <td><span class="badge text-bg-light text-dark border">{{ file.get_visibility_display|truncatechars:22 }}</span></td>
+            <td class="small text-muted">{{ file.created_at|date:"j M Y" }}</td>
+            <td class="text-end text-nowrap">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'storage:download' file.pk %}">Download</a>
+              {% if user.is_admin_user or file.uploaded_by_id == user.pk %}
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'storage:delete' file.pk %}">Delete</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="p-0">
+            {% include "partials/_empty.html" with title="No files" hint="Upload something to get started." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

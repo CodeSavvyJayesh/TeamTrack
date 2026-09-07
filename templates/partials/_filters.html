@@ -1,0 +1,17 @@
+{% comment %}Inline filter bar. Fields render side by side and submit by GET.{% endcomment %}
+{% if filter_form %}
+<form method="get" class="row g-2 align-items-end mb-3">
+  {% for field in filter_form %}
+    <div class="col-6 col-md-auto">
+      <label class="form-label small text-muted mb-1">{{ field.label }}</label>
+      {{ field }}
+    </div>
+  {% endfor %}
+  <div class="col-auto">
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </div>
+  <div class="col-auto">
+    <a class="btn btn-link text-muted" href="{{ request.path }}">Clear</a>
+  </div>
+</form>
+{% endif %}

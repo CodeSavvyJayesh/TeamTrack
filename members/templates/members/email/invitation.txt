@@ -1,0 +1,12 @@
+Hello {{ invitation.full_name }},
+
+You have been invited to TeamTrack, the internal team management system.
+
+Open this link to set your password and activate your account:
+
+{{ accept_url }}
+
+The link expires on {{ invitation.expires_at|date:"j F Y, H:i" }} and can only
+be used once. If it expires, ask your administrator to resend it.
+
+TeamTrack

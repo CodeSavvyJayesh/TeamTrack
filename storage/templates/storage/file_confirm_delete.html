@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row"><div class="col-lg-6">
+  <div class="card"><div class="card-body">
+    <p>Delete <strong>{{ file.original_name }}</strong>?</p>
+    <p class="text-muted small">This cannot be undone.</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Delete file</button>
+        <a class="btn btn-outline-secondary" href="{% url 'storage:list' %}">Cancel</a>
+      </div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

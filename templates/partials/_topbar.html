@@ -1,0 +1,27 @@
+<header class="app-topbar">
+  <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button" id="sidebarToggle" aria-label="Toggle navigation">
+    <svg class="ico"><use href="#i-menu"/></svg>
+  </button>
+
+  <div class="ms-auto d-flex align-items-center gap-2">
+    {% if user.is_authenticated %}
+      <div class="dropdown">
+        <button class="btn btn-sm btn-light d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <span class="avatar">{{ user.initials }}</span>
+          <span class="d-none d-sm-inline">{{ user.full_name }}</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><span class="dropdown-item-text small text-muted">{{ user.email }}</span></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My profile</a></li>
+          <li>
+            <form method="post" action="{% url 'accounts:logout' %}" class="d-inline w-100">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item">Sign out</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</header>

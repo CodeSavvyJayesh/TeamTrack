@@ -1,0 +1,45 @@
+{% comment %}
+Navigation is chosen by ROLE, never by name. Adding a member never requires
+touching this file - that is the whole point.
+{% endcomment %}
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sidebar-brand">
+    <span class="brand-mark">TT</span>
+    <span class="brand-name">TeamTrack</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    {% if user.is_authenticated %}
+      {% if user.is_admin_user %}
+        <a class="nav-link-item {% if nav == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:admin' %}"><svg class="ico"><use href="#i-grid"/></svg>Dashboard</a>
+        <a class="nav-link-item {% if nav == 'members' %}active{% endif %}" href="{% url 'members:list' %}"><svg class="ico"><use href="#i-users"/></svg>Members</a>
+        <a class="nav-link-item {% if nav == 'tasks' %}active{% endif %}" href="{% url 'work:task_list' %}"><svg class="ico"><use href="#i-check"/></svg>Tasks</a>
+        <a class="nav-link-item {% if nav == 'hours' %}active{% endif %}" href="{% url 'hours:list' %}"><svg class="ico"><use href="#i-clock"/></svg>Working Hours</a>
+        <a class="nav-link-item {% if nav == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}"><svg class="ico"><use href="#i-doc"/></svg>Reports</a>
+        <a class="nav-link-item {% if nav == 'files' %}active{% endif %}" href="{% url 'storage:list' %}"><svg class="ico"><use href="#i-file"/></svg>Files</a>
+        <div class="sidebar-divider"></div>
+        <a class="nav-link-item {% if nav == 'projects' %}active{% endif %}" href="{% url 'work:project_list' %}"><svg class="ico"><use href="#i-folder"/></svg>Projects</a>
+        <a class="nav-link-item {% if nav == 'forms' %}active{% endif %}" href="{% url 'google_forms:list' %}"><svg class="ico"><use href="#i-list"/></svg>Google Forms</a>
+        <a class="nav-link-item {% if nav == 'activity' %}active{% endif %}" href="{% url 'dashboard:activity' %}"><svg class="ico"><use href="#i-list"/></svg>Activity Log</a>
+        <a class="nav-link-item {% if nav == 'settings' %}active{% endif %}" href="{% url 'core:setup_check' %}"><svg class="ico"><use href="#i-gear"/></svg>Settings</a>
+      {% else %}
+        <a class="nav-link-item {% if nav == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:member' %}"><svg class="ico"><use href="#i-grid"/></svg>Dashboard</a>
+        <a class="nav-link-item {% if nav == 'tasks' %}active{% endif %}" href="{% url 'work:task_list' %}"><svg class="ico"><use href="#i-check"/></svg>My Tasks</a>
+        <a class="nav-link-item {% if nav == 'hours' %}active{% endif %}" href="{% url 'hours:list' %}"><svg class="ico"><use href="#i-clock"/></svg>Working Hours</a>
+        <a class="nav-link-item {% if nav == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}"><svg class="ico"><use href="#i-doc"/></svg>My Reports</a>
+        <a class="nav-link-item {% if nav == 'files' %}active{% endif %}" href="{% url 'storage:list' %}"><svg class="ico"><use href="#i-file"/></svg>Files</a>
+        {% if user.profile.tracks_google_forms %}
+          <a class="nav-link-item {% if nav == 'forms' %}active{% endif %}" href="{% url 'google_forms:list' %}"><svg class="ico"><use href="#i-list"/></svg>Google Forms</a>
+        {% endif %}
+        <div class="sidebar-divider"></div>
+        <a class="nav-link-item {% if nav == 'profile' %}active{% endif %}" href="{% url 'accounts:profile' %}"><svg class="ico"><use href="#i-user"/></svg>Profile</a>
+      {% endif %}
+    {% endif %}
+  </nav>
+
+  {% if user.is_authenticated %}
+    <div class="sidebar-footer">
+      {{ user.get_role_display }}
+    </div>
+  {% endif %}
+</aside>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block page_actions %}
+  <a class="btn btn-primary btn-sm" href="{% url 'reports:create' %}">New report</a>
+{% endblock %}
+
+{% block content %}
+{% include "partials/_filters.html" %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr><th>Date</th>{% if user.is_admin_user %}<th>Member</th>{% endif %}
+        <th>Summary</th><th>Blockers</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+          <tr>
+            <td class="text-nowrap">{{ report.date|date:"j M Y" }}</td>
+            {% if user.is_admin_user %}<td class="small">{{ report.member.full_name }}</td>{% endif %}
+            <td>{{ report.summary|truncatechars:80 }}</td>
+            <td>
+              {% if report.has_blockers %}
+                <span class="badge text-bg-warning-subtle text-warning-emphasis">Yes</span>
+              {% else %}
+                <span class="text-muted small">None</span>
+              {% endif %}
+            </td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:detail' report.pk %}">Read</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="p-0">
+            {% include "partials/_empty.html" with title="No reports" hint="Nothing matches these filters." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

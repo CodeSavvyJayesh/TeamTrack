@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row"><div class="col-lg-6">
+  <div class="card"><div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/_form.html" %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save changes</button>
+        <a class="btn btn-outline-secondary" href="{% url 'members:detail' object.user_id %}">Cancel</a>
+      </div>
+    </form>
+  </div></div>
+  <p class="text-muted small mt-2 mb-0">
+    Promoting someone to administrator is deliberately not on this form. Do that
+    in Django admin, where it is an explicit act.
+  </p>
+</div></div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row"><div class="col-lg-6">
+  <div class="card"><div class="card-body">
+    <p>
+      Delete <strong>{{ object.member.full_name }}</strong>'s record for
+      {{ object.date|date:"j F Y" }}
+      ({{ object.start_time|time:"H:i" }} - {{ object.end_time|time:"H:i" }},
+      {{ object.duration_display }})?
+    </p>
+    <p class="text-muted small">The deletion itself is recorded in the activity log.</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Delete record</button>
+        <a class="btn btn-outline-secondary" href="{% url 'hours:list' %}">Cancel</a>
+      </div>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

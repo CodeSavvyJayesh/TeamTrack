@@ -1,0 +1,31 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}TeamTrack{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="public-body">
+  <div class="public-card-wrap">
+    <div class="public-brand">
+      <span class="brand-mark">TT</span>
+      <span>TeamTrack</span>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="card">
+      <div class="card-body p-4">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+    {% block below_card %}{% endblock %}
+  </div>
+</body>
+</html>

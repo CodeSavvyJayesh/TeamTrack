@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}TeamTrack &middot; Setup{% endblock %}
+{% block page_title %}Project setup{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Environment check</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for label, value in checks %}
+              <tr>
+                <th scope="row" class="fw-normal text-muted" style="width: 55%">{{ label }}</th>
+                <td class="fw-medium">{{ value }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">What is built</div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Phase 1 is the skeleton: settings split by environment, secrets read from
+          <code>.env</code>, the base layout, and vendored Bootstrap. There are no
+          models and no login yet - that is Phase 2.
+        </p>
+        <ul class="list-unstyled mb-0 small">
+          <li class="mb-1">&#10003; Settings split (base / development / production)</li>
+          <li class="mb-1">&#10003; Secrets loaded from environment</li>
+          <li class="mb-1">&#10003; Base template, sidebar, topbar</li>
+          <li class="mb-1">&#10003; Bootstrap and Chart.js served locally</li>
+          <li class="mb-1 text-muted">&#9633; Custom user model and login (Phase 2)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Mobile sidebar toggle. Vanilla JS, no framework - the only script on this page.
+  document.getElementById('sidebarToggle')?.addEventListener('click', function () {
+    document.getElementById('appSidebar').classList.toggle('open');
+  });
+</script>
+{% endblock %}

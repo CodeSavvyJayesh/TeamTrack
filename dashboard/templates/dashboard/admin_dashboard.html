@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load formatting %}
+
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">{% now "l, j F Y" %}</p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'hours:create' %}">Add hours</a>
+  <a class="btn btn-primary btn-sm" href="{% url 'work:task_create' %}">New task</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Team hours today</div>
+    <div class="stat-value">{{ totals.today|duration_format }}</div>
+    <div class="text-muted small">{{ totals.week|duration_format }} this week</div>
+  </div></div></div>
+
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Members</div>
+    <div class="stat-value">{{ stats.members_active }}<span class="text-muted fs-6">/{{ stats.members_total }}</span></div>
+    <div class="text-muted small">
+      {% if stats.pending_invitations %}
+        <a href="{% url 'members:invitations' %}">{{ stats.pending_invitations }} invitation{{ stats.pending_invitations|pluralize }} pending</a>
+      {% else %}active{% endif %}
+    </div>
+  </div></div></div>
+
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Tasks open</div>
+    <div class="stat-value">{{ stats.tasks_open }}</div>
+    <div class="text-muted small">{{ stats.tasks_completed }} completed</div>
+  </div></div></div>
+
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Overdue</div>
+    <div class="stat-value {% if stats.tasks_overdue %}text-danger{% endif %}">{{ stats.tasks_overdue }}</div>
+    <div class="text-muted small">across the team</div>
+  </div></div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Team overview</span>
+    <a class="small text-decoration-none" href="{% url 'members:list' %}">Manage members</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Member</th><th>Role</th><th>Today's hours</th><th>Tasks</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar">{{ row.member.initials }}</span>
+                <a class="fw-medium text-decoration-none" href="{% url 'members:detail' row.member.pk %}">{{ row.member.full_name }}</a>
+              </div>
+            </td>
+            <td class="small text-muted">{{ row.member.profile.work_type|default:"-" }}</td>
+            <td class="fw-medium">{{ row.today_minutes|duration_format }}</td>
+            <td class="small text-muted">{{ row.done_tasks }} done / {{ row.open_tasks }} open</td>
+            <td>
+              {% if row.member.is_active %}
+                <span class="badge text-bg-success-subtle text-success-emphasis">Active</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inactive</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="p-0">
+            {% include "partials/_empty.html" with title="No members yet" hint="Invite someone from the Members page." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Team hours, last 7 days</div>
+      <div class="card-body"><canvas id="hoursChart" height="110"></canvas></div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Recent uploads</span>
+        <a class="small text-decoration-none" href="{% url 'storage:list' %}">All files</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for file in recent_uploads %}
+          <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+            <div class="text-truncate">
+              <a class="text-decoration-none" href="{% url 'storage:download' file.pk %}">{{ file.original_name }}</a>
+              <div class="text-muted small">{{ file.uploaded_by.full_name }}</div>
+            </div>
+            <span class="text-muted small text-nowrap">{{ file.size_display }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No uploads yet" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Recent activity</span>
+        <a class="small text-decoration-none" href="{% url 'dashboard:activity' %}">Full log</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for entry in recent_activity %}
+          <li class="list-group-item">
+            <div class="small">{{ entry.target_repr|default:entry.get_verb_display }}</div>
+            <div class="text-muted small">
+              {{ entry.created_at|date:"j M, H:i" }}{% if entry.actor %} &middot; {{ entry.actor.full_name }}{% endif %}
+            </div>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="Nothing logged yet" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{{ chart_labels|json_script:"chartLabels" }}
+{{ chart_values|json_script:"chartValues" }}
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/chart.umd.js' %}"></script>
+<script src="{% static 'js/hours-chart.js' %}"></script>
+{% endblock %}

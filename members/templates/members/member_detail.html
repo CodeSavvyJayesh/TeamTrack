@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load formatting %}
+
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">
+    {{ member.email }}
+    {% if member.profile.work_type %} &middot; {{ member.profile.work_type }}{% endif %}
+    {% if member.profile.department %} &middot; {{ member.profile.department }}{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'members:edit' member.pk %}">Edit</a>
+  <form method="post" action="{% url 'members:toggle_active' member.pk %}" class="d-inline">
+    {% csrf_token %}
+    <button class="btn btn-sm {% if member.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">
+      {% if member.is_active %}Deactivate{% else %}Reactivate{% endif %}
+    </button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Today</div><div class="stat-value">{{ totals.today|duration_format }}</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">This week</div><div class="stat-value">{{ totals.week|duration_format }}</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">This month</div><div class="stat-value">{{ totals.month|duration_format }}</div>
+  </div></div></div>
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Tasks done</div>
+    <div class="stat-value">{{ task_counts.completed }}<span class="text-muted fs-6">/{{ task_counts.total }}</span></div>
+  </div></div></div>
+</div>
+
+{% if form_stats %}
+<div class="row g-3 mb-3">
+  <div class="col-12"><div class="card"><div class="card-body">
+    <div class="stat-label mb-2">Google Forms submissions</div>
+    <div class="d-flex gap-4">
+      <div><div class="stat-value">{{ form_stats.today }}</div><div class="text-muted small">Today</div></div>
+      <div><div class="stat-value">{{ form_stats.week }}</div><div class="text-muted small">This week</div></div>
+      <div><div class="stat-value">{{ form_stats.month }}</div><div class="text-muted small">This month</div></div>
+    </div>
+  </div></div></div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header">Hours, last 7 days</div>
+      <div class="card-body"><canvas id="hoursChart" height="120"></canvas></div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Recent tasks</span>
+        <a class="small text-decoration-none" href="{% url 'work:task_list' %}?member={{ member.pk }}">All tasks</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for task in recent_tasks %}
+              <tr>
+                <td><a class="text-decoration-none" href="{% url 'work:task_detail' task.pk %}">{{ task.title }}</a></td>
+                <td class="text-end"><span class="badge text-bg-{{ task.status_badge }}">{{ task.get_status_display }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td class="p-0">{% include "partials/_empty.html" with title="No tasks assigned" hint="" %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Recent working hours</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for session in recent_sessions %}
+              <tr>
+                <td>{{ session.date|date:"j M Y" }}</td>
+                <td class="text-muted">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</td>
+                <td class="text-end fw-medium">{{ session.duration_display }}</td>
+              </tr>
+            {% empty %}
+              <tr><td class="p-0">{% include "partials/_empty.html" with title="No hours recorded" hint="Add them from the Working Hours page." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header">Files</div>
+      <ul class="list-group list-group-flush">
+        {% for file in recent_files %}
+          <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+            <a class="text-decoration-none text-truncate" href="{% url 'storage:download' file.pk %}">{{ file.original_name }}</a>
+            <span class="text-muted small text-nowrap">{{ file.size_display }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No files" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Daily reports</div>
+      <ul class="list-group list-group-flush">
+        {% for report in recent_reports %}
+          <li class="list-group-item">
+            <a class="text-decoration-none" href="{% url 'reports:detail' report.pk %}">{{ report.date|date:"j M Y" }}</a>
+            <div class="text-muted small">{{ report.summary|truncatechars:70 }}</div>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No reports filed" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Activity</div>
+      <ul class="list-group list-group-flush">
+        {% for entry in activity %}
+          <li class="list-group-item">
+            <div class="small">{{ entry.target_repr|default:entry.get_verb_display }}</div>
+            <div class="text-muted small">
+              {{ entry.created_at|date:"j M, H:i" }}{% if entry.actor %} &middot; {{ entry.actor.full_name }}{% endif %}
+            </div>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No activity" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{{ chart_labels|json_script:"chartLabels" }}
+{{ chart_values|json_script:"chartValues" }}
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/chart.umd.js' %}"></script>
+<script src="{% static 'js/hours-chart.js' %}"></script>
+{% endblock %}

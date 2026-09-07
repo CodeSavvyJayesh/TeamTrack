@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block page_actions %}
+  {% if user.is_admin_user %}
+    <a class="btn btn-primary btn-sm" href="{% url 'work:task_create' %}">New task</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Open</div><div class="stat-value">{{ counts.open }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Completed</div><div class="stat-value">{{ counts.completed }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Overdue</div><div class="stat-value {% if counts.overdue %}text-danger{% endif %}">{{ counts.overdue }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Total</div><div class="stat-value">{{ counts.total }}</div></div></div></div>
+</div>
+
+{% include "partials/_filters.html" %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Task</th>
+          {% if user.is_admin_user %}<th>Assigned to</th>{% endif %}
+          <th>Priority</th><th>Status</th><th>Due</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+          <tr>
+            <td>
+              <a class="fw-medium text-decoration-none" href="{% url 'work:task_detail' task.pk %}">{{ task.title }}</a>
+              {% if task.project %}<div class="text-muted small">{{ task.project.name }}</div>{% endif %}
+            </td>
+            {% if user.is_admin_user %}<td class="small">{{ task.assigned_to.full_name }}</td>{% endif %}
+            <td><span class="badge text-bg-{{ task.priority_badge }}">{{ task.get_priority_display }}</span></td>
+            <td><span class="badge text-bg-{{ task.status_badge }}">{{ task.get_status_display }}</span></td>
+            <td class="small {% if task.is_overdue %}text-danger fw-medium{% else %}text-muted{% endif %}">
+              {{ task.due_date|date:"j M Y"|default:"-" }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="p-0">
+            {% include "partials/_empty.html" with title="No tasks" hint="Nothing matches these filters." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

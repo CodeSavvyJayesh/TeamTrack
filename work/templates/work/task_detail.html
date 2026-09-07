@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">
+    Assigned to {{ task.assigned_to.full_name }}
+    {% if task.project %} &middot; {{ task.project.name }}{% endif %}
+    &middot; created by {{ task.created_by.full_name }} on {{ task.created_at|date:"j M Y" }}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% if can_edit_fully %}
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'work:task_edit' task.pk %}">Edit task</a>
+  {% endif %}
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'work:task_list' %}">Back to tasks</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex gap-2 mb-3">
+          <span class="badge text-bg-{{ task.status_badge }}">{{ task.get_status_display }}</span>
+          <span class="badge text-bg-{{ task.priority_badge }}">{{ task.get_priority_display }}</span>
+          {% if task.is_overdue %}<span class="badge text-bg-danger">Overdue</span>{% endif %}
+        </div>
+        {% if task.description %}
+          <p class="mb-0" style="white-space: pre-wrap">{{ task.description }}</p>
+        {% else %}
+          <p class="text-muted mb-0">No description.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if task.notes %}
+      <div class="card mb-3">
+        <div class="card-header">Notes</div>
+        <div class="card-body"><p class="mb-0" style="white-space: pre-wrap">{{ task.notes }}</p></div>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">Attached files</div>
+      <ul class="list-group list-group-flush">
+        {% for file in files %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a class="text-decoration-none" href="{% url 'storage:download' file.pk %}">{{ file.original_name }}</a>
+            <span class="text-muted small">{{ file.size_display }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No files attached" hint="Attach one when uploading from the Files page." %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">Update status</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'work:task_status' task.pk %}">
+          {% csrf_token %}
+          <div class="mb-3">{{ status_form.status }}</div>
+          <button type="submit" class="btn btn-primary w-100">Save status</button>
+        </form>
+        <p class="text-muted small mt-3 mb-0">
+          {% if can_edit_fully %}
+            You can change anything about this task from Edit task.
+          {% else %}
+            Status is the only field you can change. Everything else is set by your administrator.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Details</div>
+      <table class="table table-sm mb-0">
+        <tbody>
+          <tr><th class="fw-normal text-muted">Due date</th><td>{{ task.due_date|date:"j M Y"|default:"Not set" }}</td></tr>
+          <tr><th class="fw-normal text-muted">Created</th><td>{{ task.created_at|date:"j M Y" }}</td></tr>
+          <tr><th class="fw-normal text-muted">Completed</th><td>{{ task.completed_at|date:"j M Y, H:i"|default:"Not yet" }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

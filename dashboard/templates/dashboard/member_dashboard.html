@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load formatting %}
+
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">{% now "l, j F Y" %}</p>
+{% endblock %}
+
+{% block page_actions %}
+  {% if not todays_report %}
+    <a class="btn btn-primary btn-sm" href="{% url 'reports:create' %}">File today's report</a>
+  {% else %}
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'reports:detail' todays_report.pk %}">Today's report</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Working hours today</div>
+    <div class="stat-value">{{ totals.today|duration_format }}</div>
+    <div class="text-muted small">{{ totals.week|duration_format }} this week</div>
+  </div></div></div>
+
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Tasks completed</div>
+    <div class="stat-value">{{ task_counts.completed }}</div>
+    <div class="text-muted small">all time</div>
+  </div></div></div>
+
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Tasks pending</div>
+    <div class="stat-value">{{ task_counts.pending }}</div>
+    <div class="text-muted small">{{ task_counts.in_progress }} in progress</div>
+  </div></div></div>
+
+  {% if tracks_forms %}
+    <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Forms submitted</div>
+      <div class="stat-value">{{ form_stats.today }}</div>
+      <div class="text-muted small">{{ form_stats.week }} this week</div>
+    </div></div></div>
+  {% else %}
+    <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value {% if task_counts.overdue %}text-danger{% endif %}">{{ task_counts.overdue }}</div>
+      <div class="text-muted small">past their due date</div>
+    </div></div></div>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header">My hours, last 7 days</div>
+      <div class="card-body"><canvas id="hoursChart" height="110"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Open tasks</span>
+        <a class="small text-decoration-none" href="{% url 'work:task_list' %}">All my tasks</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <tbody>
+            {% for task in open_tasks %}
+              <tr>
+                <td>
+                  <a class="text-decoration-none" href="{% url 'work:task_detail' task.pk %}">{{ task.title }}</a>
+                  {% if task.project %}<div class="text-muted small">{{ task.project.name }}</div>{% endif %}
+                </td>
+                <td><span class="badge text-bg-{{ task.priority_badge }}">{{ task.get_priority_display }}</span></td>
+                <td class="text-end small {% if task.is_overdue %}text-danger fw-medium{% else %}text-muted{% endif %}">
+                  {{ task.due_date|date:"j M"|default:"-" }}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="p-0">{% include "partials/_empty.html" with title="Nothing open" hint="You're all caught up." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Recent files</span>
+        <a class="small text-decoration-none" href="{% url 'storage:list' %}">All files</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for file in recent_files %}
+          <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+            <a class="text-decoration-none text-truncate" href="{% url 'storage:download' file.pk %}">{{ file.original_name }}</a>
+            <span class="text-muted small text-nowrap">{{ file.size_display }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No files yet" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Recent activity</div>
+      <ul class="list-group list-group-flush">
+        {% for entry in recent_activity %}
+          <li class="list-group-item">
+            <div class="small">{{ entry.target_repr|default:entry.get_verb_display }}</div>
+            <div class="text-muted small">{{ entry.created_at|date:"j M, H:i" }}</div>
+          </li>
+        {% empty %}
+          <li class="list-group-item p-0">{% include "partials/_empty.html" with title="No activity yet" hint="" %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{{ chart_labels|json_script:"chartLabels" }}
+{{ chart_values|json_script:"chartValues" }}
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'vendor/chart.umd.js' %}"></script>
+<script src="{% static 'js/hours-chart.js' %}"></script>
+{% endblock %}
