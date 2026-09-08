@@ -6,12 +6,17 @@ from .base import *  # noqa: F401,F403
 
 DEBUG = True
 
-# Always allow this machine. Anything extra (your wifi IP, so phones and other
-# laptops on the same network can reach the app) comes from ALLOWED_HOSTS
-# in .env as a comma-separated list.
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"] + config(
-    "ALLOWED_HOSTS", default="", cast=Csv()  # noqa: F405
-)
+# Development accepts any host by default.
+#
+# ALLOWED_HOSTS exists to stop Host-header attacks on a public server. On a
+# laptop there is no such risk, and pinning it to one address means re-editing
+# this every time the wifi hands out a new IP - which it does constantly. So
+# the default here is open, and phones on the same network just work.
+#
+# Setting ALLOWED_HOSTS in .env still overrides this if you want it tight.
+# config/settings/production.py is unaffected: it reads the list from the
+# environment and has no permissive fallback.
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv()) or ["*"]  # noqa: F405
 
 DATABASES = {
     "default": {

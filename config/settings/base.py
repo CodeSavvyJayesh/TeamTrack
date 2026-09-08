@@ -43,6 +43,8 @@ LOCAL_APPS = [
     "storage",
     "reports",
     "dashboard",
+    "notifications",
+    "attendance",
     "integrations.google",
 ]
 
@@ -77,6 +79,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.navigation",
+                "notifications.context_processors.notifications",
+                "attendance.context_processors.attendance",
             ],
         },
     },
@@ -145,6 +149,13 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 INVITATION_EXPIRY_DAYS = config("INVITATION_EXPIRY_DAYS", default=7, cast=int)
 MAX_UPLOAD_SIZE_MB = config("MAX_UPLOAD_SIZE_MB", default=10, cast=int)
 MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+
+# --- Attendance -------------------------------------------------------------
+# The clock starts when someone signs in and stops when they sign out. People
+# forget to sign out, so any session still open past this many hours is closed
+# automatically and flagged - see `manage.py close_stale_attendance`.
+ATTENDANCE_MAX_HOURS = config("ATTENDANCE_MAX_HOURS", default=9, cast=int)
+
 
 ALLOWED_UPLOAD_EXTENSIONS = [
     "pdf", "doc", "docx", "xls", "xlsx", "csv", "txt",

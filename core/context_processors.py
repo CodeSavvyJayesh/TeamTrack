@@ -16,6 +16,8 @@ NAV_BY_PREFIX = [
     ("/activity", "activity"),
     ("/accounts/profile", "profile"),
     ("/setup", "settings"),
+    ("/notifications", "notifications"),
+    ("/attendance", "attendance"),
 ]
 
 

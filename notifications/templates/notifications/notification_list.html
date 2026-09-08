@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">
+    {% if unread_total %}{{ unread_total }} unread{% else %}All caught up{% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% if unread_total %}
+    <form method="post" action="{% url 'notifications:read_all' %}">
+      {% csrf_token %}
+      <button class="btn btn-outline-secondary btn-sm" type="submit">Mark all read</button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <ul class="list-group list-group-flush">
+    {% for note in notifications %}
+      <li class="list-group-item notif-row {% if not note.is_read %}unread{% endif %}">
+        <a class="d-flex gap-3 text-decoration-none text-body" href="{% url 'notifications:open' note.pk %}">
+          <svg class="ico mt-1 text-muted flex-shrink-0"><use href="#{{ note.icon }}"/></svg>
+          <div class="flex-grow-1 min-w-0">
+            <div class="fw-medium">{{ note.title }}</div>
+            {% if note.body %}<div class="text-muted small">{{ note.body }}</div>{% endif %}
+            <div class="text-muted smaller mt-1">
+              {{ note.created_at|date:"j M Y, H:i" }}
+              {% if note.emailed %} &middot; emailed{% endif %}
+            </div>
+          </div>
+          {% if not note.is_read %}<span class="badge text-bg-primary align-self-start">New</span>{% endif %}
+        </a>
+      </li>
+    {% empty %}
+      <li class="list-group-item p-0">
+        {% include "partials/_empty.html" with title="No notifications" hint="You'll be told here when work is assigned to you." %}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

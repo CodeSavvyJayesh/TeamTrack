@@ -1,8 +1,12 @@
-# Core - everything the application needs to run in development.
+# --- Core ---------------------------------------------------------------
 Django>=5.1,<6.0
 python-decouple==3.8
 
-# Production only. Uncomment when deploying with PostgreSQL:
-# psycopg[binary]==3.2.3
-# gunicorn==23.0.0
-# whitenoise==6.8.2
+# --- Production ---------------------------------------------------------
+# Installed everywhere so that `check --deploy` and the test suite can run
+# against production settings locally. None of it is used in development.
+psycopg[binary]==3.3.5      # PostgreSQL driver
+gunicorn==26.2.0            # WSGI server
+whitenoise==6.12.0          # serves static files from the app process
+dj-database-url==3.1.2      # parses the DATABASE_URL the host injects
+django-storages[s3]==1.14.6 # uploaded files in object storage, not on disk

@@ -21,6 +21,8 @@ urlpatterns = [
     path("hours/", include("hours.urls")),
     path("files/", include("storage.urls")),
     path("reports/", include("reports.urls")),
+    path("notifications/", include("notifications.urls")),
+    path("attendance/", include("attendance.urls")),
     path("forms/", include("integrations.google.urls")),
     path("setup/", include("core.urls")),
 ]

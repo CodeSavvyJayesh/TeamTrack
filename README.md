@@ -82,6 +82,22 @@ login identifier throughout this project.
 Members get **404**, not 403, on another member's records: a 403 would confirm
 the record exists. Querysets are filtered, so there is nothing to leak.
 
+## Deployment
+
+Render + PostgreSQL + Cloudflare R2. Full runbook:
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+`render.yaml` defines the web service, the database and the nightly attendance
+cleanup job. `build.sh` runs on every deploy: install, collectstatic, migrate,
+bootstrap the administrator.
+
+Two things that are easy to get wrong and expensive to discover late:
+
+- **Uploaded files must go to object storage.** Render wipes the local disk on
+  every deploy. Set the `AWS_*` variables or files disappear.
+- **`CSRF_TRUSTED_ORIGINS` must list every hostname you serve**, with the
+  `https://` prefix, or every form submission fails while every page still loads.
+
 ## Tests
 
 ```bash

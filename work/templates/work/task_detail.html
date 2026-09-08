@@ -77,7 +77,15 @@
       <div class="card-header">Details</div>
       <table class="table table-sm mb-0">
         <tbody>
-          <tr><th class="fw-normal text-muted">Due date</th><td>{{ task.due_date|date:"j M Y"|default:"Not set" }}</td></tr>
+          <tr>
+            <th class="fw-normal text-muted">Deadline</th>
+            <td class="{% if task.is_overdue %}text-danger fw-medium{% endif %}">
+              {{ task.deadline_display|default:"Not set" }}
+            </td>
+          </tr>
+          {% if task.estimated_hours %}
+            <tr><th class="fw-normal text-muted">Estimated</th><td>{{ task.estimated_hours_display }}</td></tr>
+          {% endif %}
           <tr><th class="fw-normal text-muted">Created</th><td>{{ task.created_at|date:"j M Y" }}</td></tr>
           <tr><th class="fw-normal text-muted">Completed</th><td>{{ task.completed_at|date:"j M Y, H:i"|default:"Not yet" }}</td></tr>
         </tbody>

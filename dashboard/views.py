@@ -17,6 +17,9 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from accounts.models import Invitation, User
+from attendance.selectors import totals_for as tracked_totals_for
+from attendance.models import AttendanceSession
+from attendance.selectors import tracked_minutes_by_member
 from core.mixins import AdminRequiredMixin, PageTitleMixin
 from core.models import ActivityLog
 from hours.models import WorkSession
@@ -45,7 +48,8 @@ class MemberDashboardView(LoginRequiredMixin, PageTitleMixin, TemplateView):
         today = timezone.localdate()
 
         context["page_title"] = f"{user.get_short_name()}'s dashboard"
-        context["totals"] = totals_for(user)
+        context["totals"] = totals_for(user)          # admin-entered, official
+        context["tracked"] = tracked_totals_for(user)  # measured by the system
 
         tasks = Task.objects.filter(assigned_to=user)
         context["task_counts"] = {
@@ -104,10 +108,19 @@ class AdminDashboardView(AdminRequiredMixin, PageTitleMixin, TemplateView):
             .annotate(total=Sum("duration_minutes"))
         }
 
+        # Recorded (what Hetansh entered) next to tracked (what the system saw).
+        # Where the two disagree is the interesting column.
+        tracked_minutes = tracked_minutes_by_member(today)
+        open_now = set(
+            AttendanceSession.objects.open().values_list("member_id", flat=True)
+        )
+
         context["rows"] = [
             {
                 "member": member,
                 "today_minutes": today_minutes.get(member.pk, 0),
+                "tracked_minutes": tracked_minutes.get(member.pk, 0),
+                "signed_in": member.pk in open_now,
                 "open_tasks": member.open_tasks,
                 "done_tasks": member.done_tasks,
             }

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load formatting %}
+
+{% block page_subtitle %}
+  <p class="text-muted small mb-0">
+    {% if is_admin %}
+      Recorded automatically when people sign in and out.
+    {% else %}
+      Tracked automatically from when you sign in to when you sign out.
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  {% if attendance_open %}
+    <form method="post" action="{% url 'attendance:stop' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'attendance:list' %}">
+      <button class="btn btn-outline-danger btn-sm" type="submit">Stop for the day</button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if not is_admin %}
+  <div class="notice-strip">
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="stat-label">Tracked today</div>
+        <div class="stat-value">{{ totals.today|duration_format }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-label">Tracked this week</div>
+        <div class="stat-value">{{ totals.week|duration_format }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-label">Recorded today</div>
+        <div class="stat-value">{{ recorded.today|duration_format }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-label">Recorded this week</div>
+        <div class="stat-value">{{ recorded.week|duration_format }}</div>
+      </div>
+    </div>
+    <p class="text-muted small mb-0 mt-2">
+      <strong>Tracked</strong> is measured by the system. <strong>Recorded</strong> is
+      what your administrator entered, and that is the official figure.
+    </p>
+  </div>
+{% else %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Tracked today</div><div class="stat-value">{{ totals.today|duration_format }}</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Tracked this week</div><div class="stat-value">{{ totals.week|duration_format }}</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Signed in now</div><div class="stat-value">{{ signed_in_now|length }}</div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Auto-closed</div>
+      <div class="stat-value {% if auto_closed_count %}text-warning{% endif %}">{{ auto_closed_count }}</div>
+      <div class="text-muted small">forgot to sign out</div>
+    </div></div></div>
+  </div>
+
+  {% if signed_in_now %}
+    <div class="notice-strip">
+      <div class="fw-medium mb-2">Signed in right now</div>
+      <div class="d-flex flex-wrap gap-2">
+        {% for session in signed_in_now %}
+          <span class="clock-pill">
+            <span class="clock-dot"></span>
+            {{ session.member.full_name }} &middot; {{ session.duration_display }}
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% include "partials/_filters.html" %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          {% if is_admin %}<th>Member</th>{% endif %}
+          <th>Signed in</th><th>Signed out</th><th>Tracked</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in sessions %}
+          <tr>
+            <td class="text-nowrap">{{ session.started_at|date:"j M Y" }}</td>
+            {% if is_admin %}<td class="small">{{ session.member.full_name }}</td>{% endif %}
+            <td>{{ session.started_at|time:"H:i" }}</td>
+            <td>
+              {% if session.is_open %}
+                <span class="text-success fw-medium">still signed in</span>
+              {% else %}
+                {{ session.ended_at|time:"H:i" }}
+              {% endif %}
+            </td>
+            <td class="fw-medium">{{ session.duration_display }}</td>
+            <td class="text-end">
+              {% if session.auto_closed %}
+                <span class="badge text-bg-warning-subtle text-warning-emphasis"
+                      title="Nobody signed out, so this was closed at the daily cap. Not a real measurement.">
+                  Auto-closed
+                </span>
+              {% elif session.end_source == "MANUAL" %}
+                <span class="badge text-bg-light text-dark border">Stopped manually</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="p-0">
+            {% include "partials/_empty.html" with title="No attendance yet" hint="Sessions appear here as people sign in and out." %}
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+
+{% if auto_closed_count %}
+  <p class="text-muted small mt-2 mb-0">
+    An <strong>auto-closed</strong> session means nobody signed out, so it was capped
+    rather than measured. Treat those figures as unreliable.
+  </p>
+{% endif %}
+{% endblock %}

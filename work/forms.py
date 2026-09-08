@@ -24,7 +24,8 @@ SELECT = {"class": "form-select"}
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ["title", "description", "project", "assigned_to", "status", "priority", "due_date", "notes"]
+        fields = ["title", "description", "project", "assigned_to", "status", "priority",
+                  "due_date", "due_time", "estimated_hours", "notes"]
         widgets = {
             "title": forms.TextInput(attrs=TEXT),
             "description": forms.Textarea(attrs={**TEXT, "rows": 4}),
@@ -33,6 +34,9 @@ class TaskForm(forms.ModelForm):
             "status": forms.Select(attrs=SELECT),
             "priority": forms.Select(attrs=SELECT),
             "due_date": forms.DateInput(attrs={**TEXT, "type": "date"}),
+            "due_time": forms.TimeInput(attrs={**TEXT, "type": "time"}),
+            "estimated_hours": forms.NumberInput(attrs={**TEXT, "step": "0.25", "min": "0",
+                                                        "placeholder": "e.g. 6"}),
             "notes": forms.Textarea(attrs={**TEXT, "rows": 2}),
         }
 
@@ -46,6 +50,13 @@ class TaskForm(forms.ModelForm):
         self.fields["assigned_to"].queryset = assignable.distinct()
         self.fields["project"].queryset = Project.objects.filter(is_active=True)
         self.fields["project"].empty_label = "No project"
+        self.fields["due_date"].help_text = "The assignee is notified as soon as you save."
+
+    def clean_estimated_hours(self):
+        hours = self.cleaned_data.get("estimated_hours")
+        if hours is not None and hours <= 0:
+            raise forms.ValidationError("An estimate has to be more than zero hours.")
+        return hours
 
 
 class TaskStatusForm(forms.ModelForm):

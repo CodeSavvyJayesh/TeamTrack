@@ -1,0 +1,19 @@
+Hello {{ task.assigned_to.get_short_name }},
+
+You have been assigned a new task in TeamTrack.
+
+  {{ task.title }}
+{% if task.project %}  Project:   {{ task.project.name }}
+{% endif %}  Priority:  {{ task.get_priority_display }}
+{% if deadline %}  Deadline:  {{ deadline }}
+{% endif %}{% if task.estimated_hours %}  Estimated: {{ task.estimated_hours_display }}
+{% endif %}
+{% if task.description %}
+{{ task.description }}
+{% endif %}
+Open it here:
+{{ url }}
+
+Your working time starts automatically when you sign in.
+
+TeamTrack

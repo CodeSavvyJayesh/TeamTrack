@@ -15,6 +15,7 @@ touching this file - that is the whole point.
         <a class="nav-link-item {% if nav == 'members' %}active{% endif %}" href="{% url 'members:list' %}"><svg class="ico"><use href="#i-users"/></svg>Members</a>
         <a class="nav-link-item {% if nav == 'tasks' %}active{% endif %}" href="{% url 'work:task_list' %}"><svg class="ico"><use href="#i-check"/></svg>Tasks</a>
         <a class="nav-link-item {% if nav == 'hours' %}active{% endif %}" href="{% url 'hours:list' %}"><svg class="ico"><use href="#i-clock"/></svg>Working Hours</a>
+        <a class="nav-link-item {% if nav == 'attendance' %}active{% endif %}" href="{% url 'attendance:list' %}"><svg class="ico"><use href="#i-list"/></svg>Attendance</a>
         <a class="nav-link-item {% if nav == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}"><svg class="ico"><use href="#i-doc"/></svg>Reports</a>
         <a class="nav-link-item {% if nav == 'files' %}active{% endif %}" href="{% url 'storage:list' %}"><svg class="ico"><use href="#i-file"/></svg>Files</a>
         <div class="sidebar-divider"></div>
@@ -26,6 +27,7 @@ touching this file - that is the whole point.
         <a class="nav-link-item {% if nav == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:member' %}"><svg class="ico"><use href="#i-grid"/></svg>Dashboard</a>
         <a class="nav-link-item {% if nav == 'tasks' %}active{% endif %}" href="{% url 'work:task_list' %}"><svg class="ico"><use href="#i-check"/></svg>My Tasks</a>
         <a class="nav-link-item {% if nav == 'hours' %}active{% endif %}" href="{% url 'hours:list' %}"><svg class="ico"><use href="#i-clock"/></svg>Working Hours</a>
+        <a class="nav-link-item {% if nav == 'attendance' %}active{% endif %}" href="{% url 'attendance:list' %}"><svg class="ico"><use href="#i-list"/></svg>My Attendance</a>
         <a class="nav-link-item {% if nav == 'reports' %}active{% endif %}" href="{% url 'reports:list' %}"><svg class="ico"><use href="#i-doc"/></svg>My Reports</a>
         <a class="nav-link-item {% if nav == 'files' %}active{% endif %}" href="{% url 'storage:list' %}"><svg class="ico"><use href="#i-file"/></svg>Files</a>
         {% if user.profile.tracks_google_forms %}

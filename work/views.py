@@ -18,6 +18,7 @@ from core.mixins import AdminRequiredMixin, PageTitleMixin
 from core.models import ActivityLog
 from core.services import log_activity
 from integrations.ether.config import notify_ether
+from notifications.services import notify_task_assigned
 from storage.models import UploadedFile
 
 from .forms import ProjectForm, TaskFilterForm, TaskForm, TaskStatusForm
@@ -113,7 +114,13 @@ class TaskCreateView(AdminRequiredMixin, PageTitleMixin, CreateView):
         )
         notify_ether("task.created", {"task_id": self.object.pk,
                                       "member_id": self.object.assigned_to_id})
-        messages.success(self.request, "Task created.")
+
+        # The assignee is told immediately: in-app, and by email with the
+        # deadline in it. Failing to notify never rolls back the assignment.
+        notify_task_assigned(self.object, request=self.request)
+
+        recipient = self.object.assigned_to.get_short_name()
+        messages.success(self.request, f"Task created. {recipient} has been notified.")
         return response
 
 
@@ -124,7 +131,13 @@ class TaskUpdateView(AdminRequiredMixin, PageTitleMixin, UpdateView):
     page_title = "Edit task"
 
     def form_valid(self, form):
+        # Captured before saving so we can tell a reassignment from an edit.
+        # Fixing a typo should not ping somebody.
+        previous_assignee_id = Task.objects.values_list("assigned_to_id", flat=True).get(
+            pk=self.object.pk
+        )
         response = super().form_valid(form)
+
         log_activity(
             actor=self.request.user,
             verb=ActivityLog.Verb.TASK_UPDATED,
@@ -132,7 +145,16 @@ class TaskUpdateView(AdminRequiredMixin, PageTitleMixin, UpdateView):
             subject=self.object.assigned_to,
             target_repr=f"Edited '{self.object.title}'",
         )
-        messages.success(self.request, "Task updated.")
+
+        if previous_assignee_id != self.object.assigned_to_id:
+            notify_task_assigned(self.object, request=self.request, reassigned=True)
+            messages.success(
+                self.request,
+                f"Task updated and reassigned. "
+                f"{self.object.assigned_to.get_short_name()} has been notified.",
+            )
+        else:
+            messages.success(self.request, "Task updated.")
         return response
 
 

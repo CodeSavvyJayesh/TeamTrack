@@ -3,8 +3,48 @@
     <svg class="ico"><use href="#i-menu"/></svg>
   </button>
 
+  {% if attendance_open %}
+    <div class="clock-pill ms-3" title="Your working time is being tracked">
+      <span class="clock-dot"></span>
+      Working since {{ attendance_open.started_at|time:"H:i" }}
+    </div>
+  {% endif %}
+
   <div class="ms-auto d-flex align-items-center gap-2">
     {% if user.is_authenticated %}
+
+      {# --- Notifications ------------------------------------------------ #}
+      <div class="dropdown">
+        <button class="btn btn-sm btn-light position-relative" type="button" data-bs-toggle="dropdown"
+                aria-label="Notifications">
+          <svg class="ico"><use href="#i-bell"/></svg>
+          {% if notification_unread_count %}
+            <span class="notif-badge">{{ notification_unread_count }}</span>
+          {% endif %}
+        </button>
+        <div class="dropdown-menu dropdown-menu-end notif-menu">
+          <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+            <span>Notifications</span>
+            {% if notification_unread_count %}
+              <span class="badge text-bg-primary">{{ notification_unread_count }} new</span>
+            {% endif %}
+          </h6>
+          {% for note in notification_recent %}
+            <a class="dropdown-item notif-item {% if not note.is_read %}unread{% endif %}"
+               href="{% url 'notifications:open' note.pk %}">
+              <div class="fw-medium text-truncate">{{ note.title }}</div>
+              <div class="text-muted small text-truncate">{{ note.body }}</div>
+              <div class="text-muted smaller">{{ note.created_at|timesince }} ago</div>
+            </a>
+          {% empty %}
+            <div class="dropdown-item-text text-muted small">Nothing yet.</div>
+          {% endfor %}
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item text-center small" href="{% url 'notifications:list' %}">See all</a>
+        </div>
+      </div>
+
+      {# --- Account ------------------------------------------------------ #}
       <div class="dropdown">
         <button class="btn btn-sm btn-light d-flex align-items-center gap-2 dropdown-toggle" type="button" data-bs-toggle="dropdown">
           <span class="avatar">{{ user.initials }}</span>
@@ -14,10 +54,12 @@
           <li><span class="dropdown-item-text small text-muted">{{ user.email }}</span></li>
           <li><hr class="dropdown-divider"></li>
           <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My profile</a></li>
+          <li><a class="dropdown-item" href="{% url 'attendance:list' %}">My attendance</a></li>
+          <li><hr class="dropdown-divider"></li>
           <li>
             <form method="post" action="{% url 'accounts:logout' %}" class="d-inline w-100">
               {% csrf_token %}
-              <button type="submit" class="dropdown-item">Sign out</button>
+              <button type="submit" class="dropdown-item">Sign out{% if attendance_open %} &amp; stop clock{% endif %}</button>
             </form>
           </li>
         </ul>

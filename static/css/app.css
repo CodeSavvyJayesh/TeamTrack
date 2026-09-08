@@ -190,3 +190,63 @@ body {
   font-weight: 600;
   font-size: 1.05rem;
 }
+
+/* --- Notifications and the attendance clock ----------------------------- */
+
+.notif-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  min-width: 17px; height: 17px;
+  padding: 0 4px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: #dc3545;
+  color: #fff;
+  font-size: .66rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.notif-menu { width: 320px; max-height: 420px; overflow-y: auto; }
+
+.notif-item { white-space: normal; padding: .6rem 1rem; border-left: 3px solid transparent; }
+.notif-item.unread { background: #f2f6ff; border-left-color: #4f7cff; }
+.notif-item:hover { background: #e9eff9; }
+
+.smaller { font-size: .72rem; }
+
+.clock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .25rem .7rem;
+  border-radius: 999px;
+  background: #e8f5ec;
+  color: #1c6b3a;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.clock-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #23a35a;
+  animation: clock-pulse 2s ease-in-out infinite;
+}
+
+@keyframes clock-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .3; }
+}
+
+.notice-strip {
+  border: 1px solid #e3e8ef;
+  border-left: 3px solid #4f7cff;
+  border-radius: 8px;
+  background: #fff;
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.notif-row.unread { background: #f2f6ff; border-left: 3px solid #4f7cff; }
+.min-w-0 { min-width: 0; }

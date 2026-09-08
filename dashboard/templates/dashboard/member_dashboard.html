@@ -14,11 +14,48 @@
 {% endblock %}
 
 {% block content %}
+
+{% if attendance_open %}
+  <div class="notice-strip d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div class="d-flex align-items-center gap-3">
+      <span class="clock-pill">
+        <span class="clock-dot"></span>
+        Working since {{ attendance_open.started_at|time:"H:i" }}
+      </span>
+      <span class="text-muted small">
+        {{ attendance_open.duration_display }} so far today. Your time is tracked
+        from sign in to sign out.
+      </span>
+    </div>
+    <form method="post" action="{% url 'attendance:stop' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'dashboard:member' %}">
+      <button class="btn btn-outline-danger btn-sm" type="submit">Stop for the day</button>
+    </form>
+  </div>
+{% endif %}
+
+{% if notification_unread_count %}
+  <div class="alert alert-primary d-flex justify-content-between align-items-center">
+    <span>
+      You have <strong>{{ notification_unread_count }}</strong>
+      unread notification{{ notification_unread_count|pluralize }}.
+    </span>
+    <a class="btn btn-sm btn-primary" href="{% url 'notifications:list' %}">View</a>
+  </div>
+{% endif %}
+
 <div class="row g-3 mb-3">
   <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
     <div class="stat-label">Working hours today</div>
     <div class="stat-value">{{ totals.today|duration_format }}</div>
-    <div class="text-muted small">{{ totals.week|duration_format }} this week</div>
+    <div class="text-muted small">recorded by your administrator</div>
+  </div></div></div>
+
+  <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
+    <div class="stat-label">Tracked today</div>
+    <div class="stat-value">{{ tracked.today|duration_format }}</div>
+    <div class="text-muted small"><a class="text-decoration-none" href="{% url 'attendance:list' %}">signed in to signed out</a></div>
   </div></div></div>
 
   <div class="col-6 col-lg-3"><div class="card stat-card"><div class="card-body">
