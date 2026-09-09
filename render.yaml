@@ -72,39 +72,11 @@ services:
       - key: ATTENDANCE_MAX_HOURS
         value: "9"
 
-  # Closes attendance sessions nobody signed out of. Without this one job the
-  # numbers drift: a single forgotten sign-out becomes a 40-hour "day".
-  - type: cron
-    name: teamtrack-close-stale-attendance
-    runtime: python
-    plan: starter
-    region: singapore
-    schedule: "30 18 * * *"   # 00:00 IST (Render schedules in UTC)
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python manage.py close_stale_attendance"
-    envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: teamtrack
-          envVarKey: SECRET_KEY
-      - key: DATABASE_URL
-        fromDatabase:
-          name: teamtrack-db
-          property: connectionString
-      - key: ALLOWED_HOSTS
-        sync: false
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
-        sync: false
-      - key: DEFAULT_FROM_EMAIL
-        sync: false
-      - key: TIME_ZONE
-        value: Asia/Kolkata
-      - key: ATTENDANCE_MAX_HOURS
-        value: "9"
+# The nightly attendance cleanup deliberately does NOT live here.
+#
+# Render (and Railway) charge for scheduled jobs, and adding one to this file
+# is what makes the Blueprint demand a payment method before it will deploy
+# anything at all - including the free web service and database.
+#
+# It runs on GitHub Actions instead, for free:
+#   .github/workflows/close-stale-attendance.yml

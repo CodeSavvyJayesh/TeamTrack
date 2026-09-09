@@ -13,23 +13,6 @@ knows any member's name: everything is driven by the database.
 
 ## Getting started
 
-**Fastest way, on a fresh clone:**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1
-```
-
-That creates the virtual environment, installs dependencies, generates a `.env`
-with a fresh secret key, sets up the database, and creates the administrator
-account. Safe to re-run.
-
-Note that a clone contains **no `.env` and no database** - both are git-ignored
-on purpose. Every install is therefore a separate, empty system: members added
-on one machine do not exist on another, and the two never sync. For a shared
-system there must be one deployed copy - see `docs/DEPLOYMENT.md`.
-
-**Or manually:**
-
 ```powershell
 python -m venv .venv
 .venv\Scripts\activate
@@ -101,17 +84,17 @@ the record exists. Querysets are filtered, so there is nothing to leak.
 
 ## Deployment
 
-Render + PostgreSQL + Cloudflare R2. Full runbook:
+Railway + PostgreSQL + Cloudflare R2. Full runbook:
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
-`render.yaml` defines the web service, the database and the nightly attendance
-cleanup job. `build.sh` runs on every deploy: install, collectstatic, migrate,
-bootstrap the administrator.
+`railway.json` defines the build and start commands. The nightly attendance
+cleanup runs free on GitHub Actions, not on the host, because both Railway and
+Render charge for scheduled jobs. `render.yaml` is kept as an alternative.
 
 Two things that are easy to get wrong and expensive to discover late:
 
-- **Uploaded files must go to object storage.** Render wipes the local disk on
-  every deploy. Set the `AWS_*` variables or files disappear.
+- **Uploaded files must go to object storage.** Railway wipes the container
+  disk on every deploy. Set the `AWS_*` variables or files disappear.
 - **`CSRF_TRUSTED_ORIGINS` must list every hostname you serve**, with the
   `https://` prefix, or every form submission fails while every page still loads.
 

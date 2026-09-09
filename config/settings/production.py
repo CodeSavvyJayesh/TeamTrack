@@ -16,12 +16,26 @@ from .base import *  # noqa: F401,F403
 
 DEBUG = False
 
-# No fallbacks. If these are unset the site will not start.
+# No fallback. If this is unset the site will not start.
 SECRET_KEY = config("SECRET_KEY")
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
-# Django needs to be told which origins may POST to us over HTTPS. Render gives
-# you <service>.onrender.com; add your own domain here too once you have one.
+# Railway injects RAILWAY_PUBLIC_DOMAIN with the hostname it serves you on, and
+# that name changes if the service is renamed. Reading it directly means the
+# site works on the first deploy with nothing configured by hand - and getting
+# this wrong is the single most common way a first Django deploy fails, with
+# either DisallowedHost on every page or a CSRF error on every form.
+RAILWAY_DOMAIN = config("RAILWAY_PUBLIC_DOMAIN", default="")
+
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
+if RAILWAY_DOMAIN and RAILWAY_DOMAIN not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RAILWAY_DOMAIN)
+if not ALLOWED_HOSTS:
+    raise RuntimeError(
+        "Neither ALLOWED_HOSTS nor RAILWAY_PUBLIC_DOMAIN is set. Refusing to "
+        "start rather than accept requests for any hostname."
+    )
+
+# Every host we answer on must also be allowed to POST to us over HTTPS.
 CSRF_TRUSTED_ORIGINS = [
     origin if origin.startswith("http") else f"https://{origin}"
     for origin in config(
