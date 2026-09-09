@@ -59,6 +59,17 @@ if DATABASE_URL:
             ssl_require=config("DB_SSL_REQUIRE", default=True, cast=bool),
         )
     }
+elif not config("DB_NAME", default=""):
+    # Neither form of database configuration is present. Say so plainly:
+    # letting decouple raise "DB_NAME not found" sends you looking for a
+    # variable you were never supposed to set, when the real problem is a
+    # missing DATABASE_URL.
+    raise RuntimeError(
+        "No database configured. On Railway, add a variable to the web "
+        "service:  DATABASE_URL = ${{Postgres.DATABASE_URL}}  - adding the "
+        "Postgres service to the project does not wire it up by itself. "
+        "On a plain server, set DB_NAME / DB_USER / DB_PASSWORD instead."
+    )
 else:
     DATABASES = {
         "default": {
@@ -118,16 +129,30 @@ STORAGES = {
 
 
 # --- Email ------------------------------------------------------------------
+#
+# Railway, Render and Fly all block outbound SMTP ports (25, 465, 587) to keep
+# their networks off spam blocklists. Django's SMTP backend fails there with
+# "ConnectionRefusedError: [Errno 111] Connection refused" and no credentials
+# can fix it, because nothing ever leaves the container.
+#
+# So: if BREVO_API_KEY is set, send over HTTPS on port 443 instead, which is
+# never blocked. Otherwise fall back to SMTP for a plain VPS, where it works.
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = config("EMAIL_HOST")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 EMAIL_TIMEOUT = 10  # never let a slow mail server hang a web request
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+BREVO_API_KEY = config("BREVO_API_KEY", default="")
+
+if BREVO_API_KEY:
+    EMAIL_BACKEND = "core.email.BrevoAPIBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = config("EMAIL_HOST")
+    EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 
 
 # --- Security ---------------------------------------------------------------

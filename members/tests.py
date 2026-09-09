@@ -1,5 +1,8 @@
 """Administrator-only member management, plus the dashboard routing rules."""
 
+from smtplib import SMTPException
+from unittest.mock import patch
+
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
@@ -144,3 +147,82 @@ class DeactivationTests(TestCase):
 
         self.member.refresh_from_db()
         self.assertTrue(self.member.is_active)
+
+
+class InvitationSurvivesMailFailureTests(TestCase):
+    """
+    The production bug this pins: SMTP refused the connection, the exception
+    escaped the atomic block, the invitation was rolled back and the admin got
+    a 500. The invitation is the record that matters - it must outlive the
+    mail server.
+    """
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            email="admin@example.com", password="admin-pw-9931", full_name="Admin"
+        )
+        self.client.force_login(self.admin)
+
+    def _invite(self):
+        return self.client.post(reverse("members:invite"), {
+            "full_name": "New Person",
+            "email": "new@example.com",
+            "work_type": "Operations",
+            "department": "",
+        })
+
+    def test_a_dead_mail_server_does_not_lose_the_invitation(self):
+        with patch("members.views.send_mail", side_effect=SMTPException("connection refused")):
+            response = self._invite()
+
+        self.assertEqual(response.status_code, 302)  # not a 500
+        invitation = Invitation.objects.get(email="new@example.com")
+        self.assertFalse(invitation.is_accepted)
+        self.assertTrue(invitation.token)
+
+    def test_the_admin_is_told_delivery_failed(self):
+        with patch("members.views.send_mail", side_effect=SMTPException("connection refused")):
+            response = self.client.post(reverse("members:invite"), {
+                "full_name": "New Person", "email": "new@example.com",
+                "work_type": "Operations", "department": "",
+            }, follow=True)
+
+        text = " ".join(str(m) for m in response.context["messages"])
+        self.assertIn("could not be sent", text)
+        self.assertIn("Copy link", text)
+
+    def test_the_link_is_offered_for_manual_sharing(self):
+        with patch("members.views.send_mail", side_effect=SMTPException("nope")):
+            self._invite()
+
+        invitation = Invitation.objects.get(email="new@example.com")
+        page = self.client.get(reverse("members:invitations")).content.decode()
+        self.assertIn(invitation.get_accept_url(), page)
+
+    def test_the_link_still_works_after_a_failed_send(self):
+        with patch("members.views.send_mail", side_effect=SMTPException("nope")):
+            self._invite()
+        invitation = Invitation.objects.get(email="new@example.com")
+
+        self.client.logout()
+        response = self.client.get(invitation.get_accept_url())
+        self.assertEqual(response.status_code, 200)
+
+    def test_a_successful_send_still_reports_success(self):
+        response = self._invite()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_resend_survives_a_mail_failure_too(self):
+        self._invite()
+        invitation = Invitation.objects.get(email="new@example.com")
+        old_token = invitation.token
+
+        with patch("members.views.send_mail", side_effect=SMTPException("nope")):
+            response = self.client.post(
+                reverse("members:invitation_resend", args=[invitation.pk])
+            )
+
+        self.assertEqual(response.status_code, 302)
+        invitation.refresh_from_db()
+        self.assertNotEqual(invitation.token, old_token)  # new link is usable

@@ -5,6 +5,8 @@ Every view here is AdminRequiredMixin. There is no member-visible URL in this
 app at all, which is why it is separate from `accounts`.
 """
 
+import logging
+
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.db import transaction
@@ -30,21 +32,54 @@ from work.models import Task
 
 from .forms import InvitationForm, MemberFilterForm, MemberUpdateForm
 
+logger = logging.getLogger(__name__)
+
 
 def send_invitation_email(invitation, request):
     """
+    Returns True if the message was handed to the mail server, False if it was
+    not. Never raises.
+
+    The invitation record is the valuable thing; the email is only delivery.
+    Letting an SMTP failure escape used to roll the invitation back and return
+    a 500, which left the administrator with nothing to resend and no way to
+    tell a dead mail server from a real bug. Now the invitation survives, the
+    reason is logged, and the caller offers the link to share by hand.
+
     In development this prints to the terminal (console email backend), so the
     whole invite flow is testable without an SMTP server.
     """
     context = {"invitation": invitation, "accept_url": invitation.get_accept_url(request)}
     body = render_to_string("members/email/invitation.txt", context)
-    send_mail(
-        subject="You have been invited to TeamTrack",
-        message=body,
-        from_email=None,  # falls back to DEFAULT_FROM_EMAIL
-        recipient_list=[invitation.email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject="You have been invited to TeamTrack",
+            message=body,
+            from_email=None,  # falls back to DEFAULT_FROM_EMAIL
+            recipient_list=[invitation.email],
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        logger.exception("Could not email the invitation to %s", invitation.email)
+        return False
+
+
+def _invitation_sent_message(request, invitation, delivered):
+    """The same feedback for a new invitation and a resent one."""
+    if delivered:
+        days = (invitation.expires_at - timezone.now()).days + 1
+        messages.success(
+            request,
+            f"Invitation sent to {invitation.email}. It expires in {days} days.",
+        )
+    else:
+        messages.warning(
+            request,
+            f"{invitation.full_name}'s invitation was created, but the email "
+            f"could not be sent - check the email settings. Use Copy link on "
+            f"the invitations list to send it to {invitation.email} yourself.",
+        )
 
 
 class MemberListView(AdminRequiredMixin, PageTitleMixin, ListView):
@@ -151,24 +186,23 @@ class MemberInviteView(AdminRequiredMixin, PageTitleMixin, CreateView):
     success_url = reverse_lazy("members:invitations")
     page_title = "Invite a member"
 
-    @transaction.atomic
     def form_valid(self, form):
-        invitation = form.save(commit=False)
-        invitation.invited_by = self.request.user
-        invitation.save()
+        # The invitation and its log entry commit together. The email is sent
+        # afterwards, deliberately outside the transaction: a mail server that
+        # is down must not undo the invitation.
+        with transaction.atomic():
+            invitation = form.save(commit=False)
+            invitation.invited_by = self.request.user
+            invitation.save()
+            log_activity(
+                actor=self.request.user,
+                verb=ActivityLog.Verb.MEMBER_INVITED,
+                target=invitation,
+                target_repr=f"Invited {invitation.full_name} ({invitation.email})",
+            )
 
-        send_invitation_email(invitation, self.request)
-        log_activity(
-            actor=self.request.user,
-            verb=ActivityLog.Verb.MEMBER_INVITED,
-            target=invitation,
-            target_repr=f"Invited {invitation.full_name} ({invitation.email})",
-        )
-        messages.success(
-            self.request,
-            f"Invitation sent to {invitation.email}. It expires in "
-            f"{(invitation.expires_at - timezone.now()).days + 1} days.",
-        )
+        delivered = send_invitation_email(invitation, self.request)
+        _invitation_sent_message(self.request, invitation, delivered)
         return redirect(self.success_url)
 
 
@@ -243,12 +277,12 @@ class InvitationResendView(AdminRequiredMixin, View):
             return redirect("members:invitations")
 
         invitation.refresh_token()
-        send_invitation_email(invitation, request)
         log_activity(
             actor=request.user,
             verb=ActivityLog.Verb.MEMBER_INVITED,
             target=invitation,
             target_repr=f"Resent invitation to {invitation.email}",
         )
-        messages.success(request, f"A new invitation link has been sent to {invitation.email}.")
+        delivered = send_invitation_email(invitation, request)
+        _invitation_sent_message(request, invitation, delivered)
         return redirect("members:invitations")

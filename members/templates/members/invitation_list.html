@@ -27,8 +27,10 @@
                 <span class="badge text-bg-warning-subtle text-warning-emphasis">Pending</span>
               {% endif %}
             </td>
-            <td class="text-end">
+            <td class="text-end text-nowrap">
               {% if not invitation.is_accepted %}
+                <button type="button" class="btn btn-sm btn-outline-secondary js-copy-invite"
+                        data-path="{{ invitation.get_accept_url }}">Copy link</button>
                 <form method="post" action="{% url 'members:invitation_resend' invitation.pk %}" class="d-inline">
                   {% csrf_token %}
                   <button class="btn btn-sm btn-outline-secondary" type="submit">Resend</button>
@@ -46,4 +48,36 @@
   </div>
 </div>
 {% include "partials/_pagination.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Share an invitation by hand when email is unavailable. The template holds
+  // only the path; the origin comes from the page, so the link is always for
+  // the site the administrator is actually looking at.
+  document.querySelectorAll(".js-copy-invite").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var link = window.location.origin + button.dataset.path;
+      var restore = function () {
+        setTimeout(function () { button.textContent = "Copy link"; }, 1500);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).then(function () {
+          button.textContent = "Copied";
+          restore();
+        });
+        return;
+      }
+      // http:// on a local network has no clipboard API. Select it instead so
+      // Ctrl+C still works.
+      var field = document.createElement("input");
+      field.value = link;
+      document.body.appendChild(field);
+      field.select();
+      try { document.execCommand("copy"); button.textContent = "Copied"; } catch (e) { /* ignore */ }
+      document.body.removeChild(field);
+      restore();
+    });
+  });
+</script>
 {% endblock %}

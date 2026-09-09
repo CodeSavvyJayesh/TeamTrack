@@ -31,9 +31,33 @@ work until it is done.
 
 ## 2. Email
 
-Gmail is not suitable in production - 500 messages a day, and app passwords used
-from servers get flagged. Sign up at [Brevo](https://brevo.com), verify your
-sending address, and take the SMTP credentials from **SMTP & API**.
+**Gmail cannot work on Railway.** Not a credentials problem - Railway blocks
+outbound SMTP ports (25, 465, 587) so its network is not used for spam. Django
+fails with `ConnectionRefusedError: [Errno 111] Connection refused` before a
+single packet leaves the container, and no app password fixes it.
+
+So send over HTTPS instead, which is never blocked:
+
+1. Sign up at [Brevo](https://brevo.com) (free tier: 300 emails/day)
+2. Verify a sender address - **Senders, Domains & Dedicated IPs** → **Senders**
+3. **SMTP & API** → **API Keys** → **Generate a new API key**
+4. Set two variables on the web service:
+
+```
+BREVO_API_KEY=xkeysib-...
+DEFAULT_FROM_EMAIL=TeamTrack <the address you verified>
+```
+
+The `DEFAULT_FROM_EMAIL` address must be the verified one, or Brevo returns 401
+and the reason is logged.
+
+Setting `BREVO_API_KEY` switches the whole app to the HTTP backend. The
+`EMAIL_HOST` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` variables become
+unnecessary and are ignored - delete them. They still work on a plain VPS,
+where port 587 is open.
+
+Email is not load-bearing: if it fails, the invitation is still created and the
+invitations list has a **Copy link** button for sending it by hand.
 
 ## 3. Deploy
 
@@ -50,11 +74,8 @@ DJANGO_SETTINGS_MODULE=config.settings.production
 SECRET_KEY=<50+ random characters, generated fresh - see below>
 TIME_ZONE=Asia/Kolkata
 
-EMAIL_HOST=smtp-relay.brevo.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=<from Brevo>
-EMAIL_HOST_PASSWORD=<from Brevo>
-DEFAULT_FROM_EMAIL=TeamTrack <no-reply@yourdomain.com>
+BREVO_API_KEY=<from Brevo, step 2>
+DEFAULT_FROM_EMAIL=TeamTrack <the sender address you verified with Brevo>
 
 AWS_STORAGE_BUCKET_NAME=teamtrack-media
 AWS_ACCESS_KEY_ID=<from R2>
@@ -157,8 +178,17 @@ have not generated a domain yet. Do step 6 of the deploy.
 **CSRF error on every form, pages load fine.** You added a custom domain but did
 not add it to `CSRF_TRUSTED_ORIGINS`. It needs the `https://` prefix.
 
+**`ConnectionRefusedError: [Errno 111]` when inviting someone.** You are still
+on the SMTP backend. Railway blocks those ports - set `BREVO_API_KEY` (step 2).
+
+**Invitations say "the email could not be sent".** The invitation itself was
+created; use **Copy link** on the invitations list to send it by hand while you
+fix delivery. The reason is in the logs - search for `Brevo refused` or
+`Could not email the invitation`. A 401 usually means `DEFAULT_FROM_EMAIL` is
+not the address you verified with Brevo.
+
 **Emails stop.** Check Brevo for a sending limit or bounces. Every failure is
-logged - search for `Could not email notification`.
+logged - search for `Could not email`.
 
 **Uploads disappear after a deploy.** The `AWS_*` variables are wrong, so files
 went to the container disk. Anything already lost is gone.
